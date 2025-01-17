@@ -10,10 +10,14 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!session.user?.email) {
+    throw new Error('User email is missing from the session.');
+  }
+
   const team = await prisma.team.findFirst({
     where: {
       user: {
-        email: session.user?.email,
+        email: session.user.email, // Guaranteed to be a string
       },
     },
     include: {

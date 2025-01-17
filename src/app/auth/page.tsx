@@ -30,7 +30,7 @@ export default function Auth() {
         router.push('/dashboard');
       }
     } catch (error) {
-      setError('An error occurred during authentication');
+      setError(`An error occurred during authentication ${error}`);
     }
   };
 

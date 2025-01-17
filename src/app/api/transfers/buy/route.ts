@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 import { authOptions } from '../../auth/[...nextauth]/route';
-import { PrismaClient } from '@prisma/client';
 
 export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
@@ -13,15 +12,25 @@ export async function POST(request: Request) {
     const { playerId } = await request.json();
 
     // Start transaction
-    const result = await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>) => {
+    const result = await prisma.$transaction(async (prisma) => {
         // Get player and buying team
-        const player = await tx.player.findUnique({
+        const player = await prisma.player.findUnique({
             where: { id: playerId },
-            include: { team: true },
-        });
+            include: {
+              team: {
+                include: {
+                  players: true, // Explicitly include players in the team
+                },
+              },
+            },
+          });
 
-        const buyingTeam = await tx.team.findFirst({
-            where: { user: { email: session.user?.email } },
+        if (!session.user?.email) {
+            throw new Error('User email is missing in session.');
+        }
+
+        const buyingTeam = await prisma.team.findFirst({
+            where: { user: { email: session.user.email } },
             include: { players: true },
         });
 
@@ -52,7 +61,7 @@ export async function POST(request: Request) {
         }
 
         // Transfer player
-        await tx.player.update({
+        await prisma.player.update({
             where: { id: playerId },
             data: {
                 teamId: buyingTeam.id,
@@ -62,12 +71,12 @@ export async function POST(request: Request) {
         });
 
         // Update team budgets
-        await tx.team.update({
+        await prisma.team.update({
             where: { id: buyingTeam.id },
             data: { budget: buyingTeam.budget - purchasePrice },
         });
 
-        await tx.team.update({
+        await prisma.team.update({
             where: { id: player.team.id },
             data: { budget: player.team.budget + purchasePrice },
         });

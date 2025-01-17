@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { prisma } from './db';
 
 // Define player position types
@@ -73,13 +72,14 @@ const createInitialPlayers = (teamId: string) => {
   return players;
 };
 
+
 // Create a new team for a user
 export const createTeam = async (userId: string) => {
   try {
     // Start a transaction
-    return await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>) => {
+    return await prisma.$transaction(async (prisma) => {
       // Create the team
-      const team = await tx.team.create({
+      const team = await prisma.team.create({
         data: {
           name: `Team ${Math.random().toString(36).substring(7)}`,
           budget: 5000000,
@@ -89,12 +89,12 @@ export const createTeam = async (userId: string) => {
 
       // Generate and create initial players
       const players = createInitialPlayers(team.id);
-      await tx.player.createMany({
+      await prisma.player.createMany({
         data: players
       });
 
       // Return the team with players
-      return await tx.team.findUnique({
+      return await prisma.team.findUnique({
         where: { id: team.id },
         include: {
           players: true

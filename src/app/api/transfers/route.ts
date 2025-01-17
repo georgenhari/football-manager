@@ -1,8 +1,7 @@
 // src/app/api/transfers/route.ts
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { Prisma } from '@prisma/client';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,7 +9,7 @@ export async function GET(request: Request) {
   const teamName = searchParams.get('teamName');
   const maxPrice = searchParams.get('maxPrice');
 
-  const whereClause: any = {
+  const whereClause: Prisma.PlayerWhereInput = {
     isListed: true,
   };
 
