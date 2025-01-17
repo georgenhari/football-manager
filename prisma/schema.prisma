@@ -30,12 +30,12 @@ model Team {
 }
 
 model Player {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   position    String
   price       Float
-  isListed    Boolean @default(false)
+  isListed    Boolean  @default(false)
   askingPrice Float?
-  team        Team    @relation(fields: [teamId], references: [id])
-  teamId      String
+  team        Team?    @relation(fields: [teamId], references: [id]) // Make the relation optional
+  teamId      String?  // Make this field nullable
 }
