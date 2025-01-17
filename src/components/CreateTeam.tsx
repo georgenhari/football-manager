@@ -27,7 +27,10 @@ export default function CreateTeam() {
   // Fetch available players
   useEffect(() => {
     const fetchPlayers = async () => {
+      console.log("starting fetch");
       const response = await fetch('/api/players/available');
+      console.log("response", response);
+
       const data = await response.json();
       setAvailablePlayers(data);
     };
