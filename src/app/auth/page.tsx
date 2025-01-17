@@ -1,74 +1,132 @@
 // src/app/auth/page.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function Auth() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setIsLoading(true);
+    setError("");
 
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         email,
         password,
         redirect: false,
       });
 
-      console.log("result", result);
-
       if (result?.error) {
         setError(result.error);
       } else if (result?.ok) {
-        router.push('/dashboard');
+        router.push("/dashboard");
       }
     } catch (error) {
-      setError(`An error occurred during authentication ${error}`);
+      setError(`An error occurred during authentication: ${error}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-4">
+      <div className="w-full max-w-md space-y-8">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <Image
+            src="/logo.png"
+            alt="Football Manager Logo"
+            width={200}
+            height={40}
+            priority
+          />
+        </div>
+
+        {/* Welcome Text */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2 text-black">Welcome back!</h1>
+          <p className="text-gray-600">
+            Enter your email address and log in to the application.
+          </p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
+          {/* Email Input */}
+          <div>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded border border-gray-300 focus:border-black focus:ring-0"
+              placeholder="Email address"
+              required
+            />
           </div>
-        )}
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="block w-full border rounded p-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="block w-full border rounded p-2"
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-blue-500 text-white rounded p-2"
-        >
-          Sign In / Register
-        </button>
-      </form>
-    </main>
+
+          {/* Password Input */}
+          <div className="relative">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded border border-gray-300 focus:border-black focus:ring-0"
+              placeholder="Password"
+              required
+            />
+          </div>
+
+          {/* Remember Me & Reset Password */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <input
+                id="remember-me"
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <label htmlFor="remember-me" className="ml-2 text-gray-600">
+                Remember me
+              </label>
+            </div>
+            <button
+              type="button"
+              className="text-blue-600 hover:text-blue-800"
+              onClick={() => {
+                /* Add reset password logic */
+              }}
+            >
+              Reset password
+            </button>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-[#D1F760] text-black py-3 rounded hover:bg-[#bde357] transition-colors"
+          >
+            {isLoading ? "Loading..." : "Login/Register →"}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
