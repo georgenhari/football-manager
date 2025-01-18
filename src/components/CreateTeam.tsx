@@ -1,14 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Player } from '@prisma/client';
 import { AlertCircle } from 'lucide-react';
-import router from 'next/router';
+import { useRouter } from 'next/navigation';
+import { Search, Filter, X } from 'lucide-react';
 
 interface PositionRequirement {
   min: number;
   max: number;
   label: string;
+}
+
+interface Filters {
+  search: string;
+  position: string[];
+  maxPrice: string;
+  minPrice: string;
 }
 
 const POSITION_REQUIREMENTS: Record<string, PositionRequirement> = {
@@ -23,6 +31,37 @@ export default function CreateTeam() {
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const [filters, setFilters] = useState<Filters>({
+    search: '',
+    position: [],
+    maxPrice: '',
+    minPrice: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  const filteredPlayers = useMemo(() => {
+    return availablePlayers.filter(player => {
+      // Name search
+      if (filters.search && !player.name.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      
+      // Position filter
+      if (filters.position.length > 0 && !filters.position.includes(player.position)) {
+        return false;
+      }
+      
+      // Price range
+      const minPrice = filters.minPrice ? parseFloat(filters.minPrice) : 0;
+      const maxPrice = filters.maxPrice ? parseFloat(filters.maxPrice) : Infinity;
+      if (player.price < minPrice || player.price > maxPrice) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [availablePlayers, filters]);
 
   // Fetch available players
   useEffect(() => {
@@ -83,7 +122,8 @@ export default function CreateTeam() {
       // Redirect to dashboard or show success message
       router.push('/dashboard');
     } catch (error) {
-      setError('Failed to create team');
+      console.log(`Failed to create team ${error}`);
+      setError(`Failed to create team ${error}`);
     }
   };
 
@@ -113,8 +153,113 @@ export default function CreateTeam() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <h3 className="text-lg font-medium mb-4">Available Players</h3>
+          {/* Filter Section */}
+          <div className="space-y-4 mb-4">
+            {/* Search and Filter Toggle */}
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Search players..."
+                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  value={filters.search}
+                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              </div>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`px-4 py-2 rounded-lg border flex items-center gap-2 ${
+                  showFilters ? 'bg-blue-50 border-blue-500 text-blue-600' : 'border-gray-200'
+                }`}
+              >
+                <Filter size={20} />
+                <span>Filters</span>
+                {(filters.position.length > 0 || filters.minPrice || filters.maxPrice) && (
+                  <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                    {filters.position.length + Number(!!filters.minPrice) + Number(!!filters.maxPrice)}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Expandable Filter Section */}
+            {showFilters && (
+              <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm space-y-4">
+                {/* Filter Header */}
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Filter Options</h4>
+                  <button
+                    onClick={() => setFilters({ search: '', position: [], maxPrice: '', minPrice: '' })}
+                    className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                  >
+                    <X size={16} />
+                    Clear all
+                  </button>
+                </div>
+
+                {/* Position Filter */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Position</label>
+                  <div className="flex gap-2">
+                    {['GK', 'DEF', 'MID', 'ATT'].map((pos) => (
+                      <button
+                        key={pos}
+                        onClick={() => {
+                          setFilters(prev => ({
+                            ...prev,
+                            position: prev.position.includes(pos)
+                              ? prev.position.filter(p => p !== pos)
+                              : [...prev.position, pos]
+                          }))
+                        }}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                          filters.position.includes(pos)
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {pos}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price Range */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Min Price</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                      <input
+                        type="number"
+                        placeholder="Min price"
+                        className="w-full pl-8 pr-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        value={filters.minPrice}
+                        onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">Max Price</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                      <input
+                        type="number"
+                        placeholder="Max price"
+                        className="w-full pl-8 pr-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        value={filters.maxPrice}
+                        onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
-            {availablePlayers.map(player => (
+            {filteredPlayers.map(player => (
               <button
                 key={player.id}
                 onClick={() => handlePlayerToggle(player)}

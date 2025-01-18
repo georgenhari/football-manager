@@ -12,7 +12,6 @@ export async function GET() {
                 position: 'asc', // Ensures players are sorted by position
             },
         });
-        console.log("did we get", players)
 
         return NextResponse.json(players);
     } catch (error) {
