@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { Player } from '@prisma/client';
-import { AlertCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { Search, Filter, X } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { Player } from '@prisma/client';
+import { showError, showSuccess } from '@/lib/toast';
 
 interface PositionRequirement {
   min: number;
@@ -30,7 +30,6 @@ export default function CreateTeam() {
   const [selectedPlayers, setSelectedPlayers] = useState<Player[]>([]);
   const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const [filters, setFilters] = useState<Filters>({
     search: '',
@@ -66,7 +65,6 @@ export default function CreateTeam() {
   // Fetch available players
   useEffect(() => {
     const fetchPlayers = async () => {
-      console.log("starting fetch");
       const response = await fetch('/api/players/available');
       console.log("response", response);
 
@@ -95,12 +93,11 @@ export default function CreateTeam() {
       setSelectedPlayers(current => current.filter(p => p.id !== player.id));
     } else {
       if (selectedPlayers.length >= 25) {
-        setError('Maximum team size is 25 players');
+        showError('Maximum team size is 25 players')
         return;
       }
       setSelectedPlayers(current => [...current, player]);
     }
-    setError(null);
   };
 
   const handleCreateTeam = async () => {
@@ -121,9 +118,10 @@ export default function CreateTeam() {
 
       // Redirect to dashboard or show success message
       router.push('/dashboard');
+      showSuccess('Team created successfully!');
     } catch (error) {
       console.log(`Failed to create team ${error}`);
-      setError(`Failed to create team ${error}`);
+      showError(error instanceof Error ? error.message : 'Failed to create team');
     }
   };
 
@@ -299,13 +297,6 @@ export default function CreateTeam() {
           </div>
         </div>
       </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded flex items-center">
-          <AlertCircle className="w-5 h-5 mr-2" />
-          {error}
-        </div>
-      )}
 
       <button
         onClick={() => isValidTeam() && setShowModal(true)}
