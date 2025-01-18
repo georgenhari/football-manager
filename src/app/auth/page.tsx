@@ -5,11 +5,11 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { showError } from "@/lib/toast";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
@@ -17,7 +17,6 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
 
     try {
       const result = await signIn("credentials", {
@@ -27,12 +26,12 @@ export default function Auth() {
       });
 
       if (result?.error) {
-        setError(result.error);
+        showError(result.error);
       } else if (result?.ok) {
         router.push("/dashboard");
       }
     } catch (error) {
-      setError(`An error occurred during authentication: ${error}`);
+      showError(`An error occurred during authentication: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -62,12 +61,6 @@ export default function Auth() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
           {/* Email Input */}
           <div>
             <input

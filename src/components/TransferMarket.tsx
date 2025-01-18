@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import LoadingSpinner from "./LoadingSpinner";
+import { showError } from "@/lib/toast";
 
 // Define the filter types
 interface TransferFilters {
@@ -31,13 +32,12 @@ interface ListedPlayer extends Player {
 
 export default function TransferMarket() {
   const [players, setPlayers] = useState<ListedPlayer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<TransferFilters>({
     playerName: "",
     teamName: "",
     maxPrice: "",
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Sorting states
   const [sortField, setSortField] = useState<SortField>("name");
@@ -63,7 +63,7 @@ export default function TransferMarket() {
         setPlayers(data);
         setCurrentPage(1); // Reset to first page when filters change
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        showError(err instanceof Error ? err.message : "An error occurred");
       } finally {
         setIsLoading(false);
       }
@@ -151,7 +151,7 @@ export default function TransferMarket() {
 
   const FilterSection = () => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-  
+
     return (
       <div className="mb-6">
         {/* Main Search and Filter Toggle */}
@@ -162,16 +162,23 @@ export default function TransferMarket() {
               placeholder="Search players..."
               className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
               value={filters.playerName}
-              onChange={(e) => setFilters(prev => ({ ...prev, playerName: e.target.value }))}
+              onChange={(e) =>
+                setFilters((prev) => ({ ...prev, playerName: e.target.value }))
+              }
             />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={20}
+            />
           </div>
           <button
             onClick={() => setIsFilterOpen(!isFilterOpen)}
             className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition-all
-              ${isFilterOpen 
-                ? 'bg-blue-50 border-blue-500 text-blue-600' 
-                : 'border-gray-200 hover:border-gray-300'}`}
+              ${
+                isFilterOpen
+                  ? "bg-blue-50 border-blue-500 text-blue-600"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
           >
             <Filter size={20} />
             <span>Filters</span>
@@ -182,7 +189,7 @@ export default function TransferMarket() {
             )}
           </button>
         </div>
-  
+
         {/* Expandable Filter Section */}
         {isFilterOpen && (
           <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm space-y-4">
@@ -190,7 +197,7 @@ export default function TransferMarket() {
               <h3 className="font-medium">Filter Options</h3>
               <button
                 onClick={() => {
-                  setFilters({ playerName: '', teamName: '', maxPrice: '' });
+                  setFilters({ playerName: "", teamName: "", maxPrice: "" });
                   setIsFilterOpen(false);
                 }}
                 className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
@@ -199,7 +206,7 @@ export default function TransferMarket() {
                 Clear all
               </button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
@@ -210,36 +217,50 @@ export default function TransferMarket() {
                   placeholder="Enter team name..."
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                   value={filters.teamName}
-                  onChange={(e) => setFilters(prev => ({ ...prev, teamName: e.target.value }))}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      teamName: e.target.value,
+                    }))
+                  }
                 />
               </div>
-  
+
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
                   Maximum Price
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    $
+                  </span>
                   <input
                     type="number"
                     placeholder="Enter max price..."
                     className="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                     value={filters.maxPrice}
-                    onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        maxPrice: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </div>
             </div>
-  
+
             <div className="flex items-center pt-2 text-sm text-gray-600">
               <Filter size={16} className="mr-2" />
               <span>
-                {filters.teamName || filters.maxPrice 
+                {filters.teamName || filters.maxPrice
                   ? `Showing results for ${[
                       filters.teamName && `team "${filters.teamName}"`,
-                      filters.maxPrice && `max price $${filters.maxPrice}`
-                    ].filter(Boolean).join(' and ')}`
-                  : 'No filters applied'}
+                      filters.maxPrice && `max price $${filters.maxPrice}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" and ")}`
+                  : "No filters applied"}
               </span>
             </div>
           </div>
@@ -251,12 +272,6 @@ export default function TransferMarket() {
   return (
     <div className="space-y-6">
       <FilterSection />
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
 
       {isLoading ? (
         <LoadingSpinner />

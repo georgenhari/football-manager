@@ -1,10 +1,10 @@
 // src/providers/AuthProvider.tsx
-'use client';
+"use client";
 
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function AuthProvider({
   children,
@@ -15,12 +15,12 @@ export default function AuthProvider({
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth');
+    if (status === "unauthenticated") {
+      router.push("/auth");
     }
   }, [status, router]);
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return <LoadingSpinner />;
   }
 

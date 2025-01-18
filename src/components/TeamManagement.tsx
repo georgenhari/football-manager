@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Team, Player } from "@prisma/client";
 import { Search, SortAsc, SortDesc } from "lucide-react";
 import LoadingSpinner from "./LoadingSpinner";
+import { showError } from "@/lib/toast";
 
 type SortField = "name" | "position" | "price" | "status";
 type SortOrder = "asc" | "desc";
@@ -16,7 +17,6 @@ export default function TeamManagement() {
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [positionFilter, setPositionFilter] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTeam = async () => {
@@ -27,7 +27,7 @@ export default function TeamManagement() {
         const data = await response.json();
         setTeam(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        showError(err instanceof Error ? err.message : "An error occurred");
       } finally {
         setIsLoading(false);
       }
@@ -54,6 +54,7 @@ export default function TeamManagement() {
       setTeam(updatedTeam);
     } catch (error) {
       console.error("Failed to list player:", error);
+      showError("Failed to list players");
     }
   };
 
@@ -116,18 +117,10 @@ export default function TeamManagement() {
 
   const positions = ["GK", "DEF", "MID", "ATT"];
 
-  if (error) {
-    return (
-      <div className="p-4 text-red-600 bg-red-50 rounded">
-        {error}
-      </div>
-    );
-  }
-
   if (isLoading || !team) {
     return <LoadingSpinner />;
   }
-  
+
   return (
     <div className="p-4">
       <div className="mb-6">

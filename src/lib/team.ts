@@ -14,7 +14,7 @@ const INITIAL_SQUAD = {
 // Sample player names for each position
 const PLAYER_NAMES: Record<Position, string[]> = {
   GK: [
-    "David De Gea", "Manuel Neuer", "Alisson Becker", "Ederson", 
+    "David De Gea", "Manuel Neuer", "Alisson Becker", "Ederson",
     "Jan Oblak", "Thibaut Courtois", "Keylor Navas", "Marc-André ter Stegen"
   ],
   DEF: [

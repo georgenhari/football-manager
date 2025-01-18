@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { NavigationItem } from '@/types/navigation';
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { NavigationItem } from "@/types/navigation";
 
 interface MobileMenuProps {
   navigationItems: NavigationItem[];
@@ -16,10 +16,7 @@ export default function MobileMenu({ navigationItems }: MobileMenuProps) {
 
   return (
     <div className="md:hidden">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 text-gray-600"
-      >
+      <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-gray-600">
         {isOpen ? <X /> : <Menu />}
       </button>
 
@@ -32,8 +29,8 @@ export default function MobileMenu({ navigationItems }: MobileMenuProps) {
                 href={href}
                 className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${
                   pathname === href
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-gray-600 hover:bg-gray-50"
                 }`}
                 onClick={() => setIsOpen(false)}
               >
