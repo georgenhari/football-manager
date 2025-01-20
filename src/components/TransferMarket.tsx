@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import LoadingSpinner from "./LoadingSpinner";
-import { showError } from "@/lib/toast";
+import { showError, showSuccess } from "@/lib/toast";
 
 // Define the filter types
 interface TransferFilters {
@@ -26,6 +26,7 @@ type SortField = "name" | "team" | "position" | "askingPrice";
 type SortOrder = "asc" | "desc";
 interface ListedPlayer extends Player {
   team: {
+    id: string;
     name: string;
   };
 }
@@ -33,6 +34,7 @@ interface ListedPlayer extends Player {
 export default function TransferMarket() {
   const [players, setPlayers] = useState<ListedPlayer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userTeamId, setUserTeamId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TransferFilters>({
     playerName: "",
     teamName: "",
@@ -49,6 +51,17 @@ export default function TransferMarket() {
 
   // Fetch players with filters
   useEffect(() => {
+    const fetchUserTeam = async () => {
+      try {
+        const response = await fetch("/api/team");
+        const data = await response.json();
+        setUserTeamId(data.id);
+      } catch {
+        showError("Failed to fetch user team");
+      }
+    };
+    fetchUserTeam();
+
     const fetchPlayers = async () => {
       try {
         setIsLoading(true);
@@ -71,6 +84,37 @@ export default function TransferMarket() {
 
     fetchPlayers();
   }, [filters]);
+
+  const handleRemoveFromMarket = async (playerId: string) => {
+    try {
+      const response = await fetch("/api/transfers/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playerId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove player from market");
+      }
+
+      // Refresh players list
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          queryParams.append(key, value);
+        }
+      });
+
+      const updatedPlayers = await fetch(`/api/transfers?${queryParams}`).then(
+        (res) => res.json()
+      );
+      setPlayers(updatedPlayers);
+      showSuccess("Player removed from transfer list");
+    } catch (error) {
+      console.error("Failed to remove player:", error);
+      showError("Failed to remove player from transfer list");
+    }
+  };
 
   // Sort and paginate players
   const sortedAndPaginatedPlayers = useMemo(() => {
@@ -270,148 +314,164 @@ export default function TransferMarket() {
   };
 
   return (
-    <div className="space-y-6">
-      <FilterSection />
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {" "}
+      {
+        <div className="space-y-6">
+          <FilterSection />
 
-      {isLoading ? (
-        <LoadingSpinner />
-      ) : (
-        <>
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  {[
-                    { key: "name", label: "Player" },
-                    { key: "team", label: "Team" },
-                    { key: "position", label: "Position" },
-                    { key: "askingPrice", label: "Asking Price" },
-                  ].map(({ key, label }) => (
-                    <th
-                      key={key}
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort(key as SortField)}
-                    >
-                      <div className="flex items-center space-x-1">
-                        <span>{label}</span>
-                        {sortField === key &&
-                          (sortOrder === "asc" ? (
-                            <ChevronUp size={16} />
-                          ) : (
-                            <ChevronDown size={16} />
-                          ))}
-                      </div>
-                    </th>
-                  ))}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {sortedAndPaginatedPlayers.map((player) => (
-                  <tr key={player.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">
-                        {player.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-gray-900">{player.team.name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+          {isLoading ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      {[
+                        { key: "name", label: "Player" },
+                        { key: "team", label: "Team" },
+                        { key: "position", label: "Position" },
+                        { key: "askingPrice", label: "Asking Price" },
+                      ].map(({ key, label }) => (
+                        <th
+                          key={key}
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          onClick={() => handleSort(key as SortField)}
+                        >
+                          <div className="flex items-center space-x-1">
+                            <span>{label}</span>
+                            {sortField === key &&
+                              (sortOrder === "asc" ? (
+                                <ChevronUp size={16} />
+                              ) : (
+                                <ChevronDown size={16} />
+                              ))}
+                          </div>
+                        </th>
+                      ))}
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {sortedAndPaginatedPlayers.map((player) => (
+                      <tr key={player.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium text-gray-900">
+                            {player.name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-gray-900">
+                            {player.team?.name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
           ${player.position === "GK" ? "bg-yellow-100 text-yellow-800" : ""}
           ${player.position === "DEF" ? "bg-blue-100 text-blue-800" : ""}
           ${player.position === "MID" ? "bg-green-100 text-green-800" : ""}
           ${player.position === "ATT" ? "bg-red-100 text-red-800" : ""}
         `}
-                      >
-                        {player.position}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-gray-900">
-                        ${player.askingPrice?.toLocaleString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => handleBuy(player.id)}
-                        className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition-colors"
-                      >
-                        Buy Player
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {sortedAndPaginatedPlayers.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-4 text-center text-gray-500"
-                    >
-                      No players found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 bg-white border rounded-lg">
-            <div className="flex items-center">
-              <p className="text-sm text-gray-700">
-                Showing {(currentPage - 1) * playersPerPage + 1} to{" "}
-                {Math.min(currentPage * playersPerPage, players.length)} of{" "}
-                {players.length} players
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronsLeft size={20} />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(
-                  (page) =>
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                )
-                .map((page, index, array) => (
-                  <React.Fragment key={page}>
-                    {index > 0 && array[index - 1] !== page - 1 && (
-                      <span className="px-2 text-gray-500">...</span>
+                          >
+                            {player.position}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-gray-900">
+                            ${player.askingPrice?.toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          {player?.team?.id === userTeamId ? (
+                            <button
+                              onClick={() => handleRemoveFromMarket(player.id)}
+                              className="text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md transition-colors"
+                            >
+                              Remove
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleBuy(player.id)}
+                              className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition-colors"
+                            >
+                              Buy Player
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {sortedAndPaginatedPlayers.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="px-6 py-4 text-center text-gray-500"
+                        >
+                          No players found
+                        </td>
+                      </tr>
                     )}
-                    <button
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === page
-                          ? "bg-blue-500 text-white"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  </React.Fragment>
-                ))}
-              <button
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronsRight size={20} />
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-between px-4 py-3 bg-white border rounded-lg">
+                <div className="flex items-center">
+                  <p className="text-sm text-gray-700">
+                    Showing {(currentPage - 1) * playersPerPage + 1} to{" "}
+                    {Math.min(currentPage * playersPerPage, players.length)} of{" "}
+                    {players.length} players
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronsLeft size={20} />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(
+                      (page) =>
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                    )
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <span className="px-2 text-gray-500">...</span>
+                        )}
+                        <button
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-3 py-1 rounded ${
+                            currentPage === page
+                              ? "bg-blue-500 text-white"
+                              : "text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      </React.Fragment>
+                    ))}
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronsRight size={20} />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      }
     </div>
   );
 }

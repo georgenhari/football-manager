@@ -3,8 +3,10 @@ import TeamManagement from '@/components/TeamManagement';
 
 export default function DashboardPage() {
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Your Team</h2>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Your Team</h1>
+      </div>
       <TeamManagement />
     </div>
   );

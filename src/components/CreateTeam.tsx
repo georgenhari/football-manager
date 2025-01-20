@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Player } from "@prisma/client";
 import { showError, showSuccess } from "@/lib/toast";
+import PlayerList from "./PlayerList";
 
 interface PositionRequirement {
   min: number;
@@ -318,50 +319,26 @@ export default function CreateTeam() {
             )}
           </div>
 
-          <div className="space-y-2 max-h-[600px] overflow-y-auto">
-            {filteredPlayers.map((player) => (
-              <button
-                key={player.id}
-                onClick={() => handlePlayerToggle(player)}
-                className="w-full p-3 rounded-lg border hover:bg-gray-50 flex justify-between items-center"
-                disabled={
-                  selectedPlayers.length >= 25 &&
-                  !selectedPlayers.find((p) => p.id === player.id)
-                }
-              >
-                <div>
-                  <div className="font-medium">{player.name}</div>
-                  <div className="text-sm text-gray-500">{player.position}</div>
-                </div>
-                <div className="text-sm font-medium">
-                  ${player.price.toLocaleString()}
-                </div>
-              </button>
-            ))}
-          </div>
+          <PlayerList
+            title="Available Players"
+            players={filteredPlayers}
+            onPlayerClick={handlePlayerToggle}
+            buttonText="Add to Team"
+            buttonColor="blue"
+          />
         </div>
 
         <div>
           <h3 className="text-lg font-medium mb-4">
             Selected Players ({selectedPlayers.length})
           </h3>
-          <div className="space-y-2">
-            {selectedPlayers.map((player) => (
-              <button
-                key={player.id}
-                onClick={() => handlePlayerToggle(player)}
-                className="w-full p-3 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 flex justify-between items-center"
-              >
-                <div>
-                  <div className="font-medium">{player.name}</div>
-                  <div className="text-sm text-gray-500">{player.position}</div>
-                </div>
-                <div className="text-sm font-medium">
-                  ${player.price.toLocaleString()}
-                </div>
-              </button>
-            ))}
-          </div>
+          <PlayerList
+            title="Selected Players"
+            players={selectedPlayers}
+            onPlayerClick={handlePlayerToggle}
+            buttonText="Remove"
+            buttonColor="red"
+          />
         </div>
       </div>
 
