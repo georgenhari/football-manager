@@ -170,12 +170,20 @@ export default function TransferMarket() {
 
   const handleBuy = async (playerId: string) => {
     try {
-      await fetch("/api/transfers/buy", {
+      const response = await fetch("/api/transfers/buy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerId }),
       });
 
+      const data = await response.json();
+
+      if (response.status != 200) {
+        showError(data.error);
+      } else {
+        showSuccess("Player bought succesfully");
+      }
+      
       // Refresh players list
       const queryParams = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
